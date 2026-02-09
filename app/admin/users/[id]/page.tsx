@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getUserById } from "@/lib/api";
+import { fetchUserById } from "@/lib/actions";
 
 const UserDetailPage = () => {
   const router = useRouter();
@@ -12,21 +12,16 @@ const UserDetailPage = () => {
 
   useEffect(() => {
     if (params.id) {
-      fetchUser(params.id as string);
+      loadUser(params.id as string);
     }
   }, [params.id]);
 
-  const fetchUser = async (id: string) => {
-    try {
-      const result = await getUserById(id);
-      if (result.success && result.data) {
-        setUser(result.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch user:", error);
-    } finally {
-      setLoading(false);
+  const loadUser = async (id: string) => {
+    const result = await fetchUserById(id);
+    if (result.success && result.data) {
+      setUser(result.data);
     }
+    setLoading(false);
   };
 
   if (loading) {
@@ -52,9 +47,13 @@ const UserDetailPage = () => {
       <div className="bg-white rounded-lg shadow-md p-8">
         <div className="flex items-start gap-8 mb-8">
           <img
-            src={user.profilePic || "/default-avatar.png"}
+            src={user.profilePic || "/next.svg"}
             alt={user.fullName}
-            className="w-32 h-32 rounded-full object-cover"
+            className="w-32 h-32 rounded-full object-cover bg-gray-200"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/next.svg";
+            }}
           />
           <div className="flex-1">
             <h2 className="text-2xl font-bold mb-2">{user.fullName}</h2>

@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Input from "@/components/ui/input";
 import PrimaryBtn from "@/components/ui/primary-btn";
-import { login, setupAuth } from "@/lib/api";
+import { handleLogin } from "@/lib/actions";
+import { setAuthToken, setUserData } from "@/lib/api/common/storage";
 
 const LoginForm = () => {
   const router = useRouter();
@@ -13,39 +14,29 @@ const LoginForm = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
 
-    try {
-      const result = await login(email, password);
+    const result = await handleLogin({ email, password });
 
-      if (result.success && result.data) {
-        // Check if user has admin role BEFORE setting up auth
-        if (result.data.user.role !== "admin") {
-          setError("Access denied. Admin privileges required.");
-          return;
-        }
+    if (result.success && result.data) {
+      // Store auth data on client side
+      setAuthToken(result.data.token);
+      setUserData(result.data.user);
 
-        // Setup auth and store credentials (only for admin users)
-        setupAuth(result.data.token, result.data.user);
-
-        // Redirect to admin dashboard
-        router.push("/admin");
-      } else {
-        setError(result.message || "Login failed");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      setError("An error occurred during login");
-    } finally {
-      setIsSubmitting(false);
+      document.cookie = `authToken=${result.data.token}; path=/; max-age=${30 * 24 * 60 * 60}`;
+      router.push("/admin");
+    } else {
+      setError(result.message);
     }
+
+    setIsSubmitting(false);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-10 flex-1 py-5">
+    <form onSubmit={onSubmit} className="flex flex-col gap-10 flex-1 py-5">
       <div className="flex flex-col gap-5">
         {error && (
           <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">

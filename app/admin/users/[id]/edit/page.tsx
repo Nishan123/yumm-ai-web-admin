@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Input from "@/components/ui/input";
 import PrimaryBtn from "@/components/ui/primary-btn";
-import { getUserById, updateUser } from "@/lib/api";
+import { fetchUserById, handleUpdateUser } from "@/lib/actions";
 
 const EditUserPage = () => {
   const router = useRouter();
@@ -20,56 +20,46 @@ const EditUserPage = () => {
 
   useEffect(() => {
     if (params.id) {
-      fetchUser(params.id as string);
+      loadUser(params.id as string);
     }
   }, [params.id]);
 
-  const fetchUser = async (id: string) => {
-    try {
-      const result = await getUserById(id);
-      if (result.success && result.data) {
-        const user = result.data;
-        setFormData({
-          fullName: user.fullName || "",
-          email: user.email || "",
-          role: user.role || "user",
-          profilePic: null,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to fetch user:", error);
-    } finally {
-      setLoading(false);
+  const loadUser = async (id: string) => {
+    const result = await fetchUserById(id);
+    if (result.success && result.data) {
+      const user = result.data;
+      setFormData({
+        fullName: user.fullName || "",
+        email: user.email || "",
+        role: user.role || "user",
+        profilePic: null,
+      });
     }
+    setLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    try {
-      const data = new FormData();
-      data.append("fullName", formData.fullName);
-      data.append("email", formData.email);
-      data.append("role", formData.role);
-      if (formData.profilePic) {
-        data.append("profilePic", formData.profilePic);
-      }
-
-      const result = await updateUser(params.id as string, data);
-
-      if (result.success) {
-        alert("User updated successfully!");
-        router.push("/admin/users");
-      } else {
-        alert("Failed to update user: " + (result.message || "Unknown error"));
-      }
-    } catch (error) {
-      console.error("Update error:", error);
-      alert("Failed to update user");
-    } finally {
-      setIsSubmitting(false);
+    const data = new FormData();
+    data.append("fullName", formData.fullName);
+    data.append("email", formData.email);
+    data.append("role", formData.role);
+    if (formData.profilePic) {
+      data.append("profilePic", formData.profilePic);
     }
+
+    const result = await handleUpdateUser(params.id as string, data);
+
+    if (result.success) {
+      alert("User updated successfully!");
+      router.push("/admin/users");
+    } else {
+      alert(result.message || "Failed to update user");
+    }
+
+    setIsSubmitting(false);
   };
 
   if (loading) {

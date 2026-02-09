@@ -9,17 +9,9 @@ export {
     clearAuthData,
 } from "./common/storage";
 
-export { apiClient } from "./common/api-client";
 
 // Auth
-export { login, setupAuth } from "./auth/auth-api";
+export { authApi } from "./auth";
 
 // User
-export {
-    createUser,
-    getAllUsers,
-    getUserById,
-    updateUser,
-    deleteUser,
-    updateAuthUserProfile,
-} from "./user/user-api";
+export { userApi } from "./user/user";

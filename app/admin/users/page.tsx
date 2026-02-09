@@ -2,44 +2,57 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAllUsers, deleteUser } from "@/lib/api";
+import { fetchAllUsers, handleDeleteUser } from "@/lib/actions";
 
 const AdminUsersPage = () => {
   const router = useRouter();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    size: 10,
+    total: 0,
+    totalPages: 0,
+  });
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    loadUsers();
+  }, [currentPage, searchTerm]);
 
-  const fetchUsers = async () => {
-    try {
-      const result = await getAllUsers();
-      if (result.success && result.data) {
-        setUsers(result.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch users:", error);
-    } finally {
-      setLoading(false);
+  const handleSearch = () => {
+    setSearchTerm(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const loadUsers = async () => {
+    setLoading(true);
+    const result = await fetchAllUsers(currentPage, pageSize, searchTerm);
+    if (result.success && result.data) {
+      setUsers(result.data.users);
+      setPagination(result.data.pagination);
+    }
+    setLoading(false);
+  };
+
+  const onDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return;
 
-    try {
-      const result = await deleteUser(id);
-      if (result.success) {
-        alert("User deleted successfully");
-        fetchUsers(); // Refresh the list
-      } else {
-        alert("Failed to delete user");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert("Failed to delete user");
+    const result = await handleDeleteUser(id);
+    if (result.success) {
+      alert("User deleted successfully");
+      loadUsers();
+    } else {
+      alert(result.message || "Failed to delete user");
     }
   };
 
@@ -51,12 +64,42 @@ const AdminUsersPage = () => {
     <div className="p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">User Management</h1>
-        <button
-          onClick={() => router.push("/admin/users/create")}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Create New User
-        </button>
+        <div className="flex gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              placeholder="Search by name or email..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="px-4 py-2 border border-gray-300 rounded-lg w-80"
+            />
+            <button
+              onClick={handleSearch}
+              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg border border-gray-300 transition-colors"
+              title="Search"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-gray-600"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+          <button
+            onClick={() => router.push("/admin/users/create")}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Create New User
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -85,9 +128,13 @@ const AdminUsersPage = () => {
               <tr key={user._id}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <img
-                    src={user.profilePic || "/default-avatar.png"}
+                    src={user.profilePic || "/next.svg"}
                     alt={user.fullName}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-10 h-10 rounded-full object-cover bg-gray-200"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/next.svg";
+                    }}
                   />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
@@ -123,7 +170,7 @@ const AdminUsersPage = () => {
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(user._id)}
+                    onClick={() => onDelete(user._id)}
                     className="text-red-600 hover:text-red-900"
                   >
                     Delete
@@ -133,6 +180,36 @@ const AdminUsersPage = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="mt-6 flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+          Showing {users.length} of {pagination.total} users
+        </div>
+        <div className="flex justify-center items-center gap-4">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600">
+            Page {pagination.page} of {pagination.totalPages}
+          </span>
+          <button
+            onClick={() =>
+              setCurrentPage((prev) =>
+                Math.min(pagination.totalPages, prev + 1),
+              )
+            }
+            disabled={currentPage >= pagination.totalPages}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

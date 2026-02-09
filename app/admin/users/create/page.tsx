@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Input from "@/components/ui/input";
 import PrimaryBtn from "@/components/ui/primary-btn";
-import { createUser } from "@/lib/api";
+import { handleCreateUser } from "@/lib/actions";
 
 const CreateUserPage = () => {
   const router = useRouter();
@@ -21,7 +21,6 @@ const CreateUserPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
@@ -29,31 +28,26 @@ const CreateUserPage = () => {
 
     setIsSubmitting(true);
 
-    try {
-      const data = new FormData();
-      data.append("fullName", formData.fullName);
-      data.append("email", formData.email);
-      data.append("password", formData.password);
-      data.append("role", formData.role);
-      data.append("authProvider", "local");
-      if (formData.profilePic) {
-        data.append("profilePic", formData.profilePic);
-      }
-
-      const result = await createUser(data);
-
-      if (result.success) {
-        alert("User created successfully!");
-        router.push("/admin/users");
-      } else {
-        alert("Failed to create user: " + (result.message || "Unknown error"));
-      }
-    } catch (error) {
-      console.error("Create error:", error);
-      alert("Failed to create user");
-    } finally {
-      setIsSubmitting(false);
+    const data = new FormData();
+    data.append("fullName", formData.fullName);
+    data.append("email", formData.email);
+    data.append("password", formData.password);
+    data.append("role", formData.role);
+    data.append("authProvider", "emailPassword");
+    if (formData.profilePic) {
+      data.append("profilePic", formData.profilePic);
     }
+
+    const result = await handleCreateUser(data);
+
+    if (result.success) {
+      alert("User created successfully!");
+      router.push("/admin/users");
+    } else {
+      alert(result.message || "Failed to create user");
+    }
+
+    setIsSubmitting(false);
   };
 
   return (
@@ -144,9 +138,6 @@ const CreateUserPage = () => {
             }
             className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
           />
-          <p className="text-xs text-gray-500">
-            Note: Using FormData even without image upload
-          </p>
         </div>
 
         <div className="flex gap-4 mt-4">
