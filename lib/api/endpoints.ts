@@ -11,5 +11,8 @@ export const API = {
         CREATE: '/admin/users',
         UPDATE: (uid: string) => `/admin/users/${uid}`,
         DELETE: (uid: string) => `/admin/users/${uid}`,
+    },
+    NOTIFICATIONS: {
+        SEND: '/admin/send-notification',
     }
 }
