@@ -13,8 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   UserCircle,
+  Icon,
+  Bug,
 } from "lucide-react";
 import { getUserData } from "@/lib/api";
+import path from "path";
 
 interface SidebarProps {}
 
@@ -34,10 +37,16 @@ const Sidebar: React.FC<SidebarProps> = () => {
     { name: "Analytics", icon: BarChart, path: "/admin/analytics" },
     { name: "Recipes", icon: ChefHat, path: "/admin/recipes" },
     { name: "Users", icon: Users, path: "/admin/users" },
+
     {
       name: "Push Notification",
       icon: Bell,
       path: "/admin/push-notification",
+    },
+    {
+      name: "Bug Reports",
+      icon: Bug,
+      path: "/admin/bug-reports",
     },
     { name: "Settings", icon: Settings, path: "/admin/settings" },
   ];

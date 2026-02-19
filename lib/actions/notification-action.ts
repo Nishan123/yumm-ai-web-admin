@@ -11,6 +11,8 @@ export const sendNotificationAction = async (formData: FormData): Promise<Action
     const title = formData.get("title") as string;
     const message = formData.get("message") as string;
 
+    const targetAudience = (formData.get("targetAudience") as "all" | "subscribed" | "unsubscribed") || "all";
+
     if (!title || !message) {
         return {
             success: false,
@@ -19,7 +21,7 @@ export const sendNotificationAction = async (formData: FormData): Promise<Action
     }
 
     try {
-        const payload: SendNotificationPayload = { title, message };
+        const payload: SendNotificationPayload = { title, message, targetAudience };
         const result = await notificationApi.sendNotification(payload);
 
         if (result.success) {

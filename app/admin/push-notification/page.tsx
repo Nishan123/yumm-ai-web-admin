@@ -1,80 +1,115 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { sendNotificationAction } from "@/lib/actions/notification-action";
+import { notificationApi } from "@/lib/api/notification/notification";
+import { NotificationLog } from "./_components/types";
+import { PushNotificationForm } from "./_components/push-notification-form";
+import { NotificationLogs } from "./_components/notification-logs";
 
 export default function PushNotificationPage() {
   const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState<NotificationLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const LIMIT = 10;
+
+  // Controlled form state
+  const [formData, setFormData] = useState({
+    title: "",
+    message: "",
+    targetAudience: "all",
+  });
+
+  const fetchLogs = async () => {
+    setLogsLoading(true);
+    const result = await notificationApi.getLogs(page, LIMIT);
+    if (result.success) {
+      if (result.data.logs) {
+        setLogs(result.data.logs);
+        setTotal(result.data.total);
+      } else {
+        setLogs(Array.isArray(result.data) ? result.data : []);
+        setTotal(0);
+      }
+    }
+    setLogsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, [page]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const result = await sendNotificationAction(formData);
+    const data = new FormData(e.currentTarget);
+    const result = await sendNotificationAction(data);
     setLoading(false);
 
     if (result.success) {
       alert("Notification sent successfully");
-      (e.target as HTMLFormElement).reset();
+      setFormData({ title: "", message: "", targetAudience: "all" });
+      fetchLogs();
     } else {
       alert(result.message || "Failed to send notification");
     }
   };
 
+  const handleResend = (log: NotificationLog) => {
+    setFormData({
+      title: log.title,
+      message: log.message,
+      targetAudience: log.targetAudience,
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this log?")) return;
+
+    const result = await notificationApi.deleteLog(id);
+    if (result.success) {
+      fetchLogs();
+    } else {
+      alert(result.message || "Failed to delete log");
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-        Send Push Notification
+    <div className="p-8 h-screen overflow-hidden flex flex-col">
+      <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white shrink-0">
+        Push Notifications
       </h1>
-      <div className="bg-white dark:bg-zinc-900 rounded-lg shadow p-6 max-w-2xl border border-gray-200 dark:border-zinc-800">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Title
-            </label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              required
-              className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-              placeholder="Enter notification title"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="message"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
-              Message
-            </label>
-            <textarea
-              name="message"
-              id="message"
-              required
-              rows={4}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-zinc-700 rounded-lg focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-              placeholder="Enter notification message"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium flex justify-center items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Sending...</span>
-              </>
-            ) : (
-              "Send Notification"
-            )}
-          </button>
-        </form>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-hidden">
+        {/* Left Side: Form */}
+        <PushNotificationForm
+          formData={formData}
+          loading={loading}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+        />
+
+        {/* Right Side: Logs */}
+        <NotificationLogs
+          logs={logs}
+          loading={logsLoading}
+          page={page}
+          limit={LIMIT}
+          onPageChange={setPage}
+          onResend={handleResend}
+          onDelete={handleDelete}
+        />
       </div>
     </div>
   );
