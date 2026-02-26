@@ -25,5 +25,10 @@ export const API = {
     },
     DASHBOARD: {
         STATS: '/admin/dashboard/stats',
+    },
+    RECIPES: {
+        GET_ALL: (query: string) => `/allRecipes?${query}`,
+        UPDATE: (id: string) => `/recipe/${id}`,
+        DELETE: (id: string) => `/recipe/${id}`,
     }
 }
