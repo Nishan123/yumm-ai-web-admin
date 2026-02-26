@@ -1,4 +1,4 @@
-import { ChefHat, UserPlus, FileWarning } from "lucide-react";
+import { ChefHat, UserPlus, FileWarning, UserMinus } from "lucide-react";
 import DashboardCard from "./dashboard-card";
 
 const getRelativeTime = (date: Date) => {
@@ -19,7 +19,7 @@ interface RecentActivityProps {
   data: {
     user: string;
     action: string;
-    type: "recipe" | "user" | "bug";
+    type: "recipe" | "user" | "bug" | "user_deleted";
     date: string; // ISO string from API
     details?: string;
   }[];
@@ -38,6 +38,9 @@ export default function RecentActivity({ data }: RecentActivityProps) {
               {activity.type === "recipe" && <ChefHat className="h-4 w-4" />}
               {activity.type === "user" && <UserPlus className="h-4 w-4" />}
               {activity.type === "bug" && <FileWarning className="h-4 w-4" />}
+              {activity.type === "user_deleted" && (
+                <UserMinus className="h-4 w-4 text-red-500" />
+              )}
             </div>
             <div className="space-y-1">
               <p className="text-sm font-medium leading-none">

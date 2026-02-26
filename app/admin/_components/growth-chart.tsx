@@ -22,7 +22,7 @@ export default function GrowthChart({ data }: GrowthChartProps) {
   if (!data || data.length === 0) return null;
 
   return (
-    <DashboardCard title="User Growth" description="Monthly active users">
+    <DashboardCard title="User Growth" description="Weekly active users">
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
