@@ -7,6 +7,7 @@ export const API = {
     },
     USERS: {
         GET_ALL: (query: string) => `/admin/users?${query}`,
+        GET_ALL_DELETED: (query: string) => `/admin/deleted-users?${query}`,
         GET_ONE: (uid: string) => `/admin/users/${uid}`,
         CREATE: '/admin/users',
         UPDATE: (uid: string) => `/admin/users/${uid}`,

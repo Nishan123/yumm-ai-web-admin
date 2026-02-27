@@ -38,7 +38,10 @@ export const UserTable = ({
                 Email
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
+                Auth Provider
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Joined On
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -47,7 +50,11 @@ export const UserTable = ({
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {users.map((user) => (
-              <tr key={user._id}>
+              <tr
+                key={user._id}
+                onClick={() => router.push(`/admin/users/${user._id}`)}
+                className="hover:bg-gray-50 cursor-pointer transition-colors"
+              >
                 <td className="px-6 py-4 whitespace-nowrap">
                   <img
                     src={user.profilePic || "/next.svg"}
@@ -68,31 +75,36 @@ export const UserTable = ({
                   <div className="text-sm text-gray-500">{user.email}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      user.role === "admin"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-green-100 text-green-800"
-                    }`}
-                  >
-                    {user.role}
-                  </span>
+                  <div className="text-sm text-gray-500 capitalize">
+                    {user.authProvider || "email"}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">
+                    {user.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      : "N/A"}
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <button
-                    onClick={() => router.push(`/admin/users/${user._id}`)}
-                    className="text-blue-600 hover:text-blue-900 mr-4"
-                  >
-                    View
-                  </button>
-                  <button
-                    onClick={() => router.push(`/admin/users/${user._id}/edit`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/admin/users/${user._id}/edit`);
+                    }}
                     className="text-indigo-600 hover:text-indigo-900 mr-4"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => onDelete(user._id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(user._id);
+                    }}
                     className="text-red-600 hover:text-red-900"
                   >
                     Delete
@@ -102,7 +114,7 @@ export const UserTable = ({
             ))}
             {users.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                   No users found.
                 </td>
               </tr>

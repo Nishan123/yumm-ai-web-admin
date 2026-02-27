@@ -48,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       icon: Bug,
       path: "/admin/bug-reports",
     },
-    { name: "Settings", icon: Settings, path: "/admin/settings" },
+    { name: "Deleted Users", icon: Users, path: "/admin/delete-users" },
   ];
 
   return (
